@@ -27,7 +27,7 @@ class Test
      * @param null|object $data
      * @return array
      */
-    public function test($data)
+    public function test( $data)
     {
     }
 }

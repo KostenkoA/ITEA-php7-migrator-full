@@ -4,12 +4,13 @@
 require_once __DIR__ . '/vendor/autoload.php';
 
 use App\Test;
+use phpDocumentor\Reflection\DocBlockFactory;
 
 $reflector = new \ReflectionClass(Test::class);
 $methods = $reflector->getMethods();
 $classToMigrateFile = __DIR__ . '/Test.php';
 $classToMigrate = \file_get_contents($classToMigrateFile);
-$factory = \phpDocumentor\Reflection\DocBlockFactory::createInstance();
+$factory = DocBlockFactory::createInstance();
 
 foreach ($methods as $method) {
     $matches = [];
@@ -28,7 +29,9 @@ foreach ($methods as $method) {
         $paramName = '$' . $param->getVariableName();
         $typesNum = count($types);
 
-        // TODO: handle "mixed" type
+        if ('mixed' === $type){
+            continue;
+        }
 
         if ($typesNum > 2) {
             continue;
@@ -39,14 +42,18 @@ foreach ($methods as $method) {
         $methodSignature = str_replace($paramName, $type . ' ' . $paramName, $methodSignature);
     }
 
-    foreach ($returns as $return) {
-        $type = (string) $return->getType();
-        $returnName = ': '. $type;
-        $methodSignature .= $returnName;
+    $typeReturn = (string) $returns[0]->getType();
+    $typesReturn = \explode('|', $typeReturn);
+    $typesReturnNum = count($typesReturn);
+
+    if ($typesReturnNum >= 2){
+        throw new LogicException('It can be only one hint');
     }
+
+    $returnName = ': '. $typeReturn;
+    $methodSignature .= $returnName;
 
     $classToMigrate = str_replace($oldMethodSignature, $methodSignature, $classToMigrate);
 }
 
 \file_put_contents($classToMigrateFile, $classToMigrate);
-
